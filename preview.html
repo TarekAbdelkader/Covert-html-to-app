@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Landscape Productivity Dashboard</title>
+  <style>
+    :root{
+      --bg:#0a1020;
+      --panel:#141b31;
+      --panel2:#1a2340;
+      --line:#2d3a5b;
+      --text:#eef3ff;
+      --muted:#95a6cc;
+      --gold:#f4c04f;
+      --teal:#3dd6b0;
+      --blue:#63a8ff;
+      --rose:#ff7f87;
+      --purple:#b59cff;
+      --shadow:0 20px 46px rgba(0,0,0,.28);
+      --radius:22px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(244,192,79,.10), transparent 24%),
+        radial-gradient(circle at top right, rgba(99,168,255,.08), transparent 22%),
+        linear-gradient(180deg, #0a1020 0%, #070b15 100%);
+      color:var(--text);
+      min-height:100vh;
+    }
+    a{color:inherit}
+    .app{
+      display:grid;
+      grid-template-columns: 300px 1fr;
+      min-height:100vh;
+    }
+    .sidebar{
+      position:sticky;
+      top:0;
+      height:100vh;
+      overflow:auto;
+      padding:20px 16px;
+      border-right:1px solid rgba(45,58,91,.9);
+      background:linear-gradient(180deg, rgba(13,18,34,.96), rgba(9,12,22,.96));
+      backdrop-filter: blur(10px);
+    }
+    .brand{
+      background:linear-gradient(180deg, rgba(26,35,64,.98), rgba(20,27,49,.96));
+      border:1px solid rgba(45,58,91,.85);
+      border-radius:24px;
+      padding:18px;
+      box-shadow:var(--shadow);
+      margin-bottom:16px;
+    }
+    .brand h1{
+      margin:0 0 8px;
+      font-size:22px;
+      line-height:1.15;
+      letter-spacing:-.04em;
+    }
+    .brand p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.55;
+    }
+    .today-box{
+      margin-top:14px;
+      padding:11px 12px;
+      border-radius:16px;
+      background:rgba(244,192,79,.08);
+      border:1px solid rgba(244,192,79,.25);
+      color:var(--gold);
+      font-weight:700;
+      font-size:13px;
+    }
+    .nav-title{
+      margin:18px 6px 10px;
+      color:var(--muted);
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.18em;
+    }
+    .nav{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .nav button{
+      border:none;
+      border-radius:16px;
+      padding:12px 13px;
+      cursor:pointer;
+      text-align:left;
+      color:var(--text);
+      background:rgba(255,255,255,.02);
+      border:1px solid transparent;
+      transition:.18s ease;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      font:inherit;
+      font-size:14px;
+    }
+    .nav button:hover{
+      transform:translateX(2px);
+      background:rgba(244,192,79,.06);
+      border-color:rgba(244,192,79,.18);
+    }
+    .nav button.active{
+      background:rgba(244,192,79,.12);
+      border-color:rgba(244,192,79,.45);
+    }
+    .nav small{color:var(--muted)}
+    .sidebar-card{
+      margin-top:16px;
+      border:1px solid rgba(45,58,91,.85);
+      background:rgba(255,255,255,.03);
+      border-radius:20px;
+      padding:14px;
+    }
+    .sidebar-card h3{margin:0 0 8px; font-size:14px}
+    .sidebar-card p{margin:0; color:var(--muted); font-size:13px; line-height:1.55}
+
+    .main{
+      padding:22px;
+      min-width:0;
+      overflow:hidden;
+    }
+    .landscape-grid{
+      display:grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap:16px;
+      align-items:start;
+    }
+    .hero, .section{
+      background:linear-gradient(180deg, rgba(20,27,49,.94), rgba(17,22,40,.96));
+      border:1px solid rgba(45,58,91,.9);
+      border-radius:28px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .hero{
+      grid-column:1 / -1;
+      padding:24px;
+    }
+    .section{
+      scroll-margin-top:18px;
+    }
+    .section header, .hero-head{
+      padding:20px 22px 14px;
+      border-bottom:1px solid rgba(45,58,91,.8);
+      background:linear-gradient(180deg, rgba(255,255,255,.03), transparent);
+    }
+    .section header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+    }
+    .section header h3, .hero h2{
+      margin:0;
+      letter-spacing:-.04em;
+    }
+    .section header h3{font-size:20px}
+    .hero h2{font-size:34px}
+    .hero p{
+      margin:10px 0 0;
+      color:var(--muted);
+      max-width:1000px;
+      line-height:1.65;
+    }
+    .hero-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(45,58,91,.85);
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .body{padding:20px 22px 22px}
+    .grid-2{display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:16px}
+    .grid-3{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px}
+    .grid-4{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:16px}
+    .grid-6{display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:14px}
+
+    .span-12{grid-column:1 / -1}
+    .span-8{grid-column:span 8}
+    .span-7{grid-column:span 7}
+    .span-6{grid-column:span 6}
+    .span-5{grid-column:span 5}
+    .span-4{grid-column:span 4}
+    .span-3{grid-column:span 3}
+
+    .card{
+      background:linear-gradient(180deg, rgba(26,35,64,.94), rgba(20,27,49,.98));
+      border:1px solid rgba(45,58,91,.82);
+      border-radius:22px;
+      padding:16px;
+      min-width:0;
+    }
+    .card h4{
+      margin:0 0 12px;
+      font-size:16px;
+      letter-spacing:-.02em;
+    }
+    .muted{color:var(--muted)}
+    .tiny{font-size:12px}
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0, 1fr));
+      gap:12px;
+      margin-top:18px;
+    }
+    .stat{
+      border-radius:18px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(45,58,91,.82);
+      padding:14px;
+    }
+    .stat .label{
+      color:var(--muted);
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.15em;
+      margin-bottom:8px;
+    }
+    .stat .value{
+      font-size:24px;
+      font-weight:900;
+      line-height:1;
+    }
+
+    input, textarea, select{
+      width:100%;
+      border:1px solid rgba(45,58,91,.95);
+      background:#0d1426;
+      color:var(--text);
+      border-radius:16px;
+      padding:11px 13px;
+      outline:none;
+      font:inherit;
+    }
+    textarea{
+      min-height:110px;
+      resize:vertical;
+      line-height:1.6;
+    }
+    input:focus, textarea:focus, select:focus{
+      border-color:rgba(244,192,79,.65);
+      box-shadow:0 0 0 3px rgba(244,192,79,.08);
+    }
+    [contenteditable="true"]{
+      outline:none;
+      border-radius:10px;
+      padding:3px 5px;
+      margin:-3px -5px;
+    }
+    [contenteditable="true"]:focus{
+      background:rgba(244,192,79,.08);
+      box-shadow:0 0 0 1px rgba(244,192,79,.20) inset;
+    }
+
+    .btn{
+      border:none;
+      border-radius:14px;
+      padding:11px 14px;
+      font-weight:700;
+      cursor:pointer;
+      transition:.16s ease;
+      font:inherit;
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .btn-gold{background:var(--gold); color:#161616}
+    .btn-dark{background:#0d1426; color:var(--text); border:1px solid rgba(45,58,91,.9)}
+    .btn-teal{background:rgba(61,214,176,.12); color:#90f2da; border:1px solid rgba(61,214,176,.24)}
+    .btn-rose{background:rgba(255,127,135,.12); color:#ffb8be; border:1px solid rgba(255,127,135,.24)}
+    .btn-blue{background:rgba(99,168,255,.12); color:#bfdcff; border:1px solid rgba(99,168,255,.24)}
+    .btn-pill{padding:8px 12px; border-radius:999px; font-size:12px}
+
+    .list{display:flex; flex-direction:column; gap:10px}
+    .item{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      padding:12px;
+      border-radius:16px;
+      background:#0d1426;
+      border:1px solid rgba(45,58,91,.9);
+    }
+    .item.done{opacity:.45; text-decoration:line-through}
+    .item input[type="checkbox"]{width:18px; height:18px; margin-top:3px; accent-color:var(--gold)}
+    .item .spacer{margin-left:auto; display:flex; gap:8px; flex-wrap:wrap}
+
+    .controls{
+      display:grid;
+      grid-template-columns:1fr 1fr auto;
+      gap:10px;
+      margin-top:12px;
+    }
+    .controls-2{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .metric-box{
+      background:#0d1426;
+      border:1px solid rgba(45,58,91,.9);
+      border-radius:18px;
+      padding:14px;
+    }
+    .metric-box .num{
+      font-size:28px;
+      font-weight:900;
+      color:var(--gold);
+      line-height:1;
+    }
+
+    .board{
+      display:grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap:12px;
+    }
+    .board-col{
+      background:#0d1426;
+      border:1px solid rgba(45,58,91,.9);
+      border-radius:18px;
+      padding:12px;
+      min-height:240px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .board-col h5{
+      margin:0;
+      font-size:14px;
+      letter-spacing:-.02em;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .board-col small{color:var(--muted); font-size:11px}
+    .board-col textarea{min-height:150px; font-size:13px}
+
+    .week{
+      display:grid;
+      grid-template-columns:repeat(7, minmax(0,1fr));
+      gap:10px;
+    }
+    .day{
+      min-height:210px;
+      background:#0d1426;
+      border:1px solid rgba(45,58,91,.9);
+      border-radius:18px;
+      padding:12px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .day.today{
+      border-color:rgba(244,192,79,.6);
+      background:rgba(244,192,79,.04);
+      box-shadow:0 0 0 2px rgba(244,192,79,.08) inset;
+    }
+    .day-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      padding-bottom:10px;
+      border-bottom:1px solid rgba(45,58,91,.8);
+      font-size:13px;
+      font-weight:700;
+    }
+    .day textarea{
+      min-height:112px;
+      border-radius:14px;
+      font-size:13px;
+    }
+
+    .timeline{
+      display:grid;
+      grid-template-columns: 100px 1fr 1fr;
+      gap:10px;
+      align-items:start;
+    }
+    .time{
+      color:var(--muted);
+      text-align:right;
+      font-size:12px;
+      padding-top:12px;
+      padding-right:4px;
+    }
+    .slot{
+      padding:10px 12px;
+      border:1px dashed rgba(45,58,91,.92);
+      border-radius:14px;
+      background:#0d1426;
+      min-height:44px;
+      outline:none;
+    }
+
+    .archive-item{
+      display:grid;
+      grid-template-columns: 220px 1fr auto;
+      gap:10px;
+      align-items:center;
+      padding:12px;
+      border-radius:16px;
+      background:#0d1426;
+      border:1px solid rgba(45,58,91,.9);
+    }
+
+    .footer-note{color:var(--muted); font-size:12px; line-height:1.6}
+
+    @media (max-width: 1280px){
+      .app{grid-template-columns:1fr}
+      .sidebar{position:relative; height:auto}
+      .hero,.section{grid-column:1 / -1}
+      .grid-2,.grid-3,.grid-4,.grid-6,.stats,.week,.board,.timeline{
+        grid-template-columns: repeat(2, minmax(0,1fr));
+      }
+      .span-12,.span-8,.span-7,.span-6,.span-5,.span-4,.span-3{grid-column:1 / -1}
+      .controls,.controls-2,.archive-item{grid-template-columns:1fr}
+      .time{text-align:left; padding-top:0}
+    }
+    @media (max-width: 680px){
+      .main{padding:14px}
+      .hero h2{font-size:24px}
+      .grid-2,.grid-3,.grid-4,.grid-6,.stats,.week,.board,.timeline{
+        grid-template-columns:1fr;
+      }
+      .controls,.controls-2,.archive-item,.timeline{grid-template-columns:1fr}
+      .section header,.hero{padding:16px}
+      .body{padding:16px}
+    }
+    @media print{
+      @page{size: landscape; margin: 10mm;}
+      .sidebar{display:none}
+      .app{grid-template-columns:1fr}
+      .main{padding:0}
+      body{background:#fff;color:#000}
+      .hero,.section,.card{box-shadow:none}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1 contenteditable="true" data-save="brand-title">Landscape Productivity Dashboard</h1>
+        <p contenteditable="true" data-save="brand-subtitle">Wide layout, editable sections, smooth jump navigation, automatic today highlighting, and organized archive.</p>
+        <div class="today-box" id="todayBox">Today: --</div>
+      </div>
+
+      <div class="nav-title">Navigation</div>
+      <div class="nav" id="nav">
+        <button data-target="dashboard" class="active">Dashboard <small>overview</small></button>
+        <button data-target="today">Today <small>focus</small></button>
+        <button data-target="board">Planning Board <small>many columns</small></button>
+        <button data-target="achieve">Achieve <small>wins</small></button>
+        <button data-target="nzd">No Zero Day <small>streak</small></button>
+        <button data-target="habits">Habits <small>tracker</small></button>
+        <button data-target="week">Weekly Plan <small>7 days</small></button>
+        <button data-target="timeblock">Time Block <small>schedule</small></button>
+        <button data-target="archive">Archive <small>history</small></button>
+        <button data-target="notes">Notes <small>scratchpad</small></button>
+      </div>
+
+      <div class="sidebar-card">
+        <h3>How to use</h3>
+        <p>Edit text directly, click the section buttons to jump smoothly, and everything saves automatically in your browser.</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="landscape-grid">
+        <section class="hero span-12" id="dashboard">
+          <div class="hero-top">
+            <div>
+              <h2 contenteditable="true" data-save="hero-title">A wide dashboard built for landscape viewing</h2>
+              <p contenteditable="true" data-save="hero-desc">This version is arranged horizontally with more columns, a cleaner working board, and a navigation system that actually moves to each section.</p>
+            </div>
+            <div class="pill" id="clockPill">--</div>
+          </div>
+
+          <div class="stats">
+            <div class="stat"><div class="label">Today</div><div class="value" id="statDay">--</div></div>
+            <div class="stat"><div class="label">Open section</div><div class="value" id="statSection">Dashboard</div></div>
+            <div class="stat"><div class="label">No Zero Day</div><div class="value" id="statNZD">1</div></div>
+            <div class="stat"><div class="label">Archive items</div><div class="value" id="statArchive">0</div></div>
+          </div>
+          <div class="card" style="margin-top:16px">
+            <h4>Move data between devices</h4>
+            <p class="footer-note" style="margin-top:0">Use Export on the laptop, then Import on the phone or another laptop. This is the bridge until syncing is added.</p>
+          </div>
+        </section>
+
+        <section class="section span-7" id="today">
+          <header>
+            <h3>Today</h3>
+            <span>Auto-reflects the current day</span>
+          </header>
+          <div class="body grid-2">
+            <div class="card">
+              <h4>Today’s focus</h4>
+              <div class="list" id="todayFocusList"></div>
+              <div class="controls">
+                <input id="todayInput" type="text" placeholder="Add a focus item">
+                <select id="todayPriority">
+                  <option value="high">High priority</option>
+                  <option value="medium">Medium priority</option>
+                  <option value="low">Low priority</option>
+                </select>
+                <button class="btn btn-gold" onclick="addTodayItem()">Add</button>
+              </div>
+            </div>
+            <div class="card">
+              <h4>Top note</h4>
+              <textarea contenteditable="true" data-save="today-note" id="todayNote" placeholder="Write the most important thing for today..."></textarea>
+              <div class="controls-2">
+                <button class="btn btn-dark" onclick="exportData()">Export data</button>
+                <button class="btn btn-dark" onclick="document.getElementById('importFile').click()">Import data</button>
+              </div>
+              <input id="importFile" type="file" accept="application/json" style="display:none" onchange="importData(event)">
+              <div class="controls-2" style="margin-top:10px">
+                <button class="btn btn-dark" onclick="resetSection('today')">Reset today</button>
+                <button class="btn btn-dark" onclick="clearAllData()">Clear all data</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section span-5" id="achieve">
+          <header>
+            <h3>Achieve</h3>
+            <span>Wins and progress</span>
+          </header>
+          <div class="body grid-2">
+            <div class="card">
+              <h4>Today wins</h4>
+              <div class="list" id="winsList"></div>
+              <div class="controls-2">
+                <input id="winInput" type="text" placeholder="Add a win">
+                <button class="btn btn-teal" onclick="addWin()">Add</button>
+              </div>
+            </div>
+            <div class="card">
+              <h4>Snapshot</h4>
+              <div class="metric-box" style="margin-bottom:12px">
+                <div class="muted tiny">Tasks completed</div>
+                <div class="num" id="completedTasks">0</div>
+              </div>
+              <div class="metric-box" style="margin-bottom:12px">
+                <div class="muted tiny">Goals completed</div>
+                <div class="num" id="completedGoals">0</div>
+              </div>
+              <div class="metric-box">
+                <div class="muted tiny">Streak</div>
+                <div class="num" id="streakCount">1</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section span-12" id="board">
+          <header>
+            <h3>Planning Board</h3>
+            <span>Six columns for better landscape organization</span>
+          </header>
+          <div class="body">
+            <div class="board">
+              <div class="board-col">
+                <h5>Daily <small>urgent</small></h5>
+                <textarea contenteditable="true" data-save="board-daily" placeholder="Daily priorities..."></textarea>
+              </div>
+              <div class="board-col">
+                <h5>Weekly <small>focus</small></h5>
+                <textarea contenteditable="true" data-save="board-weekly" placeholder="Weekly goals..."></textarea>
+              </div>
+              <div class="board-col">
+                <h5>Monthly <small>progress</small></h5>
+                <textarea contenteditable="true" data-save="board-monthly" placeholder="Monthly targets..."></textarea>
+              </div>
+              <div class="board-col">
+                <h5>Quarterly <small>targets</small></h5>
+                <textarea contenteditable="true" data-save="board-quarterly" placeholder="Quarterly objectives..."></textarea>
+              </div>
+              <div class="board-col">
+                <h5>Long-term <small>vision</small></h5>
+                <textarea contenteditable="true" data-save="board-longterm" placeholder="Long-term direction..."></textarea>
+              </div>
+              <div class="board-col">
+                <h5>Parking lot <small>later</small></h5>
+                <textarea contenteditable="true" data-save="board-parking" placeholder="Ideas for later..."></textarea>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section span-4" id="nzd">
+          <header>
+            <h3>No Zero Day</h3>
+            <span>Keep momentum</span>
+          </header>
+          <div class="body grid-1">
+            <div class="card">
+              <h4>Streak control</h4>
+              <div class="controls-2" style="margin-top:0">
+                <button class="btn btn-gold" onclick="incrementStreak()">Mark today done</button>
+                <button class="btn btn-rose" onclick="resetStreak()">Reset streak</button>
+              </div>
+              <p class="footer-note" style="margin-top:12px">One meaningful action still counts as progress.</p>
+            </div>
+            <div class="card">
+              <h4>Mini check-in</h4>
+              <textarea contenteditable="true" data-save="nzd-note" placeholder="What did you do today, even if it was small?"></textarea>
+            </div>
+          </div>
+        </section>
+
+        <section class="section span-4" id="habits">
+          <header>
+            <h3>Habits</h3>
+            <span>Daily repetition</span>
+          </header>
+          <div class="body">
+            <div class="card">
+              <div class="controls">
+                <input id="habitName" type="text" placeholder="Habit name">
+                <select id="habitCat">
+                  <option value="health">Health</option>
+                  <option value="work">Work</option>
+                  <option value="mind">Mind</option>
+                  <option value="life">Life</option>
+                </select>
+                <button class="btn btn-blue" onclick="addHabit()">Add habit</button>
+              </div>
+              <div class="list" id="habitList" style="margin-top:12px"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section span-4" id="goals">
+          <header>
+            <h3>Goals</h3>
+            <span>Three layers of targets</span>
+          </header>
+          <div class="body">
+            <div class="card">
+              <div class="grid-3">
+                <div>
+                  <h4>Now</h4>
+                  <div class="list" data-goals="now"></div>
+                  <div class="controls-2">
+                    <input id="goal-now" type="text" placeholder="Add now goal">
+                    <button class="btn btn-gold" onclick="addGoal('now')">Add</button>
+                  </div>
+                </div>
+                <div>
+                  <h4>Next</h4>
+                  <div class="list" data-goals="next"></div>
+                  <div class="controls-2">
+                    <input id="goal-next" type="text" placeholder="Add next goal">
+                    <button class="btn btn-gold" onclick="addGoal('next')">Add</button>
+                  </div>
+                </div>
+                <div>
+                  <h4>Later</h4>
+                  <div class="list" data-goals="later"></div>
+                  <div class="controls-2">
+                    <input id="goal-later" type="text" placeholder="Add later goal">
+                    <button class="btn btn-gold" onclick="addGoal('later')">Add</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section span-12" id="week">
+          <header>
+            <h3>Weekly Plan</h3>
+            <span>Today is highlighted automatically</span>
+          </header>
+          <div class="body">
+            <div class="week" id="weekGrid"></div>
+          </div>
+        </section>
+
+        <section class="section span-8" id="timeblock">
+          <header>
+            <h3>Time Block</h3>
+            <span>Editable schedule blocks</span>
+          </header>
+          <div class="body">
+            <div class="card">
+              <div class="timeline" id="timeline"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section span-4" id="archive">
+          <header>
+            <h3>Archive</h3>
+            <span>Finished items</span>
+          </header>
+          <div class="body">
+            <div class="card">
+              <div class="controls-2">
+                <input id="archiveTitle" type="text" placeholder="Archive title">
+                <input id="archiveNote" type="text" placeholder="Archive note">
+                <button class="btn btn-dark" onclick="addArchive()">Archive</button>
+              </div>
+              <div class="list" id="archiveList" style="margin-top:12px"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section span-12" id="notes">
+          <header>
+            <h3>Notes</h3>
+            <span>Scratchpad and review</span>
+          </header>
+          <div class="body grid-2">
+            <div class="card">
+              <h4>Quick notes</h4>
+              <textarea contenteditable="true" data-save="notes-main" placeholder="Anything you want to keep here..."></textarea>
+            </div>
+            <div class="card">
+              <h4>End of day</h4>
+              <textarea contenteditable="true" data-save="notes-eod" placeholder="What went well? What needs improvement?"></textarea>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const stateKey = "landscape-productivity-dashboard-v2";
+    const defaults = {
+      goals: {
+        now: [
+          {text:"Finish highest priority task", done:false},
+          {text:"Keep the day non-zero", done:false}
+        ],
+        next: [
+          {text:"Build consistent routine", done:false},
+          {text:"Reduce distraction", done:false}
+        ],
+        later: [
+          {text:"Review progress weekly", done:false},
+          {text:"Strengthen archive and notes", done:false}
+        ]
+      },
+      today: [
+        {text:"Start with the hardest task", priority:"high", done:false},
+        {text:"Make one meaningful step", priority:"medium", done:false},
+        {text:"Protect the day from zero", priority:"low", done:false}
+      ],
+      wins: ["Created a better landscape layout"],
+      habits: [
+        {name:"Workout", cat:"health", days:[0,0,0,0,0,0,0]},
+        {name:"Deep work", cat:"work", days:[0,0,0,0,0,0,0]},
+        {name:"Reading", cat:"mind", days:[0,0,0,0,0,0,0]}
+      ],
+      archive: [{title:"Sample archive", note:"Stored item for later review."}],
+      week: Array.from({length:7}, ()=>({note:""})),
+      timeline: [
+        {time:"06:00", text:"Morning routine"},
+        {time:"09:00", text:"Deep work"},
+        {time:"13:00", text:"Meetings / admin"},
+        {time:"18:00", text:"Wrap up"}
+      ],
+      streak: 1
+    };
+
+    let state = loadState();
+
+    function mergeDeep(target, source){
+      if(!source) return target;
+      for(const key of Object.keys(source)){
+        if(source[key] && typeof source[key] === "object" && !Array.isArray(source[key])){
+          target[key] = mergeDeep(target[key] || {}, source[key]);
+        }else{
+          target[key] = source[key];
+        }
+      }
+      return target;
+    }
+    function loadState(){
+      try{
+        const saved = JSON.parse(localStorage.getItem(stateKey));
+        return mergeDeep(structuredClone(defaults), saved || {});
+      }catch(e){
+        return structuredClone(defaults);
+      }
+    }
+    function saveState(){
+      localStorage.setItem(stateKey, JSON.stringify(state));
+      updateStats();
+    }
+    function esc(s){
+      return (s ?? "").toString()
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;");
+    }
+    function todayIndex(){ return new Date().getDay(); }
+    function todayDate(){ return new Intl.DateTimeFormat(undefined,{weekday:"long", year:"numeric", month:"long", day:"numeric"}).format(new Date()); }
+    function todayName(){ return new Intl.DateTimeFormat(undefined,{weekday:"long"}).format(new Date()); }
+
+    function renderHeader(){
+      document.getElementById("todayBox").textContent = "Today: " + todayDate();
+      document.getElementById("statDay").textContent = todayName();
+      document.getElementById("clockPill").textContent = new Intl.DateTimeFormat(undefined,{hour:"2-digit", minute:"2-digit", second:"2-digit"}).format(new Date());
+    }
+
+    function renderGoals(){
+      ["now","next","later"].forEach(key=>{
+        const holder = document.querySelector(`[data-goals="${key}"]`);
+        holder.innerHTML = "";
+        (state.goals[key] || []).forEach((g, idx)=>{
+          const row = document.createElement("div");
+          row.className = "item" + (g.done ? " done" : "");
+          row.innerHTML = `
+            <input type="checkbox" ${g.done ? "checked" : ""} onchange="toggleGoal('${key}', ${idx})">
+            <div style="flex:1">${esc(g.text)}</div>
+            <div class="spacer">
+              <button class="btn btn-rose btn-pill" onclick="deleteGoal('${key}', ${idx})">Delete</button>
+            </div>`;
+          holder.appendChild(row);
+        });
+      });
+    }
+    function renderToday(){
+      const list = document.getElementById("todayFocusList");
+      list.innerHTML = "";
+      state.today.forEach((t, idx)=>{
+        const row = document.createElement("div");
+        row.className = "item" + (t.done ? " done" : "");
+        row.innerHTML = `
+          <input type="checkbox" ${t.done ? "checked" : ""} onchange="toggleToday(${idx})">
+          <div style="flex:1">
+            <div>${esc(t.text)}</div>
+            <div class="muted tiny" style="margin-top:4px">Priority: ${esc(t.priority)}</div>
+          </div>
+          <div class="spacer">
+            <button class="btn btn-rose btn-pill" onclick="deleteToday(${idx})">Delete</button>
+          </div>`;
+        list.appendChild(row);
+      });
+      const note = document.getElementById("todayNote");
+      const saved = localStorage.getItem(stateKey + "::today-note");
+      if(saved !== null && !note.value) note.value = saved;
+    }
+    function renderWins(){
+      const list = document.getElementById("winsList");
+      list.innerHTML = "";
+      state.wins.forEach((w, idx)=>{
+        const row = document.createElement("div");
+        row.className = "item";
+        row.innerHTML = `
+          <div style="flex:1">${esc(w)}</div>
+          <div class="spacer">
+            <button class="btn btn-rose btn-pill" onclick="deleteWin(${idx})">Delete</button>
+          </div>`;
+        list.appendChild(row);
+      });
+    }
+    function renderHabits(){
+      const list = document.getElementById("habitList");
+      list.innerHTML = "";
+      state.habits.forEach((h, idx)=>{
+        const row = document.createElement("div");
+        row.className = "item";
+        row.innerHTML = `
+          <div style="flex:1">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <strong>${esc(h.name)}</strong>
+              <span class="pill">${esc(h.cat)}</span>
+            </div>
+            <div class="row" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px">
+              ${["S","M","T","W","T","F","S"].map((d,i)=>`<button class="btn btn-dark btn-pill" onclick="toggleHabitDay(${idx}, ${i})">${h.days[i] ? "Done" : d}</button>`).join("")}
+            </div>
+          </div>
+          <div class="spacer">
+            <button class="btn btn-rose btn-pill" onclick="deleteHabit(${idx})">Delete</button>
+          </div>`;
+        list.appendChild(row);
+      });
+    }
+    function renderWeek(){
+      const labels = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+      const grid = document.getElementById("weekGrid");
+      grid.innerHTML = "";
+      labels.forEach((label, idx)=>{
+        const day = document.createElement("div");
+        day.className = "day" + (idx === todayIndex() ? " today" : "");
+        day.innerHTML = `
+          <div class="day-top">
+            <span>${label}</span>
+            <small>${idx === todayIndex() ? "Today" : "Day " + (idx+1)}</small>
+          </div>
+          <textarea data-week-note="${idx}" placeholder="Plan for ${label}...">${esc(state.week[idx]?.note || "")}</textarea>
+          <button class="btn btn-dark btn-pill" onclick="copyTodayToWeek(${idx})">Use today focus</button>
+        `;
+        grid.appendChild(day);
+      });
+      grid.querySelectorAll("textarea[data-week-note]").forEach(t=>{
+        t.addEventListener("input", ()=>{
+          const idx = Number(t.dataset.weekNote);
+          state.week[idx].note = t.value;
+          saveState();
+        });
+      });
+    }
+    function renderTimeline(){
+      const tl = document.getElementById("timeline");
+      tl.innerHTML = "";
+      state.timeline.forEach((slot, idx)=>{
+        const time = document.createElement("div");
+        time.className = "time";
+        time.textContent = slot.time;
+        const box = document.createElement("div");
+        box.className = "slot";
+        box.contentEditable = "true";
+        box.textContent = slot.text;
+        box.addEventListener("input", ()=>{
+          state.timeline[idx].text = box.textContent.trim();
+          saveState();
+        });
+        tl.appendChild(time);
+        tl.appendChild(box);
+      });
+    }
+    function renderArchive(){
+      const list = document.getElementById("archiveList");
+      list.innerHTML = "";
+      state.archive.forEach((a, idx)=>{
+        const row = document.createElement("div");
+        row.className = "archive-item";
+        row.innerHTML = `
+          <div>
+            <strong>${esc(a.title)}</strong>
+          </div>
+          <div class="muted tiny">${esc(a.note)}</div>
+          <div class="spacer">
+            <button class="btn btn-dark btn-pill" onclick="restoreArchive(${idx})">Restore</button>
+            <button class="btn btn-rose btn-pill" onclick="deleteArchive(${idx})">Delete</button>
+          </div>`;
+        list.appendChild(row);
+      });
+    }
+    function updateStats(){
+      document.getElementById("statNZD").textContent = state.streak;
+      document.getElementById("statArchive").textContent = state.archive.length;
+      document.getElementById("completedTasks").textContent = state.today.filter(x=>x.done).length;
+      document.getElementById("completedGoals").textContent = Object.values(state.goals).flat().filter(x=>x.done).length;
+      document.getElementById("streakCount").textContent = state.streak;
+    }
+    function renderAll(){
+      renderHeader();
+      renderGoals();
+      renderToday();
+      renderWins();
+      renderHabits();
+      renderWeek();
+      renderTimeline();
+      renderArchive();
+      updateStats();
+      restoreEditableContent();
+    }
+    function restoreEditableContent(){
+      document.querySelectorAll("[data-save]").forEach(el=>{
+        const key = el.getAttribute("data-save");
+        const saved = localStorage.getItem(stateKey + "::" + key);
+        if(saved !== null && el.tagName === "TEXTAREA" && !el.value) el.value = saved;
+        if(saved !== null && el.tagName !== "TEXTAREA" && !el.innerText.trim()) el.innerText = saved;
+      });
+    }
+    function bindEditableSavers(){
+      document.querySelectorAll("[data-save]").forEach(el=>{
+        const key = el.getAttribute("data-save");
+        const save = ()=>{
+          const value = el.tagName === "TEXTAREA" ? el.value : el.innerText;
+          localStorage.setItem(stateKey + "::" + key, value);
+        };
+        el.addEventListener("input", save);
+        el.addEventListener("blur", save);
+      });
+    }
+    function bindNav(){
+      const nav = document.getElementById("nav");
+      nav.querySelectorAll("button").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const target = document.getElementById(btn.dataset.target);
+          target.scrollIntoView({behavior:"smooth", block:"start"});
+          nav.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
+          btn.classList.add("active");
+          document.getElementById("statSection").textContent = btn.textContent.trim().replace(/\s+/g, " ");
+        });
+      });
+    }
+    function observeSections(){
+      const observer = new IntersectionObserver(entries=>{
+        entries.forEach(entry=>{
+          if(entry.isIntersecting){
+            const id = entry.target.id;
+            const btn = document.querySelector(`#nav button[data-target="${id}"]`);
+            if(btn){
+              document.querySelectorAll("#nav button").forEach(b=>b.classList.remove("active"));
+              btn.classList.add("active");
+              document.getElementById("statSection").textContent = btn.textContent.trim().replace(/\s+/g, " ");
+            }
+          }
+        });
+      }, {threshold:0.35});
+      document.querySelectorAll(".hero, .section").forEach(el=>observer.observe(el));
+    }
+
+    // Actions
+    function addTodayItem(){
+      const input = document.getElementById("todayInput");
+      const priority = document.getElementById("todayPriority").value;
+      const text = input.value.trim();
+      if(!text) return;
+      state.today.unshift({text, priority, done:false});
+      input.value = "";
+      saveState(); renderToday();
+    }
+    function toggleToday(idx){
+      state.today[idx].done = !state.today[idx].done;
+      saveState(); renderToday();
+    }
+    function deleteToday(idx){
+      state.today.splice(idx,1);
+      saveState(); renderToday();
+    }
+    function addGoal(key){
+      const input = document.getElementById("goal-" + key);
+      const text = input.value.trim();
+      if(!text) return;
+      state.goals[key].push({text, done:false});
+      input.value = "";
+      saveState(); renderGoals();
+    }
+    function toggleGoal(key, idx){
+      state.goals[key][idx].done = !state.goals[key][idx].done;
+      saveState(); renderGoals();
+    }
+    function deleteGoal(key, idx){
+      state.goals[key].splice(idx,1);
+      saveState(); renderGoals();
+    }
+    function addWin(){
+      const input = document.getElementById("winInput");
+      const text = input.value.trim();
+      if(!text) return;
+      state.wins.unshift(text);
+      input.value = "";
+      saveState(); renderWins();
+    }
+    function deleteWin(idx){
+      state.wins.splice(idx,1);
+      saveState(); renderWins();
+    }
+    function addHabit(){
+      const name = document.getElementById("habitName").value.trim();
+      const cat = document.getElementById("habitCat").value;
+      if(!name) return;
+      state.habits.push({name, cat, days:[0,0,0,0,0,0,0]});
+      document.getElementById("habitName").value = "";
+      saveState(); renderHabits();
+    }
+    function toggleHabitDay(idx, dayIdx){
+      state.habits[idx].days[dayIdx] = state.habits[idx].days[dayIdx] ? 0 : 1;
+      saveState(); renderHabits();
+    }
+    function deleteHabit(idx){
+      state.habits.splice(idx,1);
+      saveState(); renderHabits();
+    }
+    function addArchive(){
+      const title = document.getElementById("archiveTitle").value.trim();
+      const note = document.getElementById("archiveNote").value.trim();
+      if(!title && !note) return;
+      state.archive.unshift({title: title || "Archived item", note: note || ""});
+      document.getElementById("archiveTitle").value = "";
+      document.getElementById("archiveNote").value = "";
+      saveState(); renderArchive();
+    }
+    function restoreArchive(idx){
+      const item = state.archive[idx];
+      if(!item) return;
+      state.today.unshift({text:item.title, priority:"medium", done:false});
+      state.archive.splice(idx,1);
+      saveState(); renderArchive(); renderToday();
+    }
+    function deleteArchive(idx){
+      state.archive.splice(idx,1);
+      saveState(); renderArchive();
+    }
+    function incrementStreak(){ state.streak += 1; saveState(); }
+    function resetStreak(){ state.streak = 1; saveState(); }
+    function copyTodayToWeek(idx){
+      state.week[idx].note = state.today.map(t => (t.done ? "✓ " : "• ") + t.text).join("\\n");
+      saveState(); renderWeek();
+    }
+    function resetSection(section){
+      if(section === "today"){
+        state.today = structuredClone(defaults.today);
+        localStorage.removeItem(stateKey + "::today-note");
+        document.getElementById("todayNote").value = "";
+        saveState(); renderToday();
+      }
+    }
+    function exportData(){
+      const data = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        state,
+        savedTexts:Object.fromEntries(Object.keys(localStorage)
+          .filter(k => k.startsWith(stateKey + "::"))
+          .map(k => [k.replace(stateKey + "::",""), localStorage.getItem(k)]))
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "landscape-productivity-dashboard-export.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importData(event){
+      const file = event.target.files && event.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try{
+          const imported = JSON.parse(reader.result);
+          if(imported.state) state = mergeDeep(structuredClone(defaults), imported.state);
+          if(imported.savedTexts && typeof imported.savedTexts === "object"){
+            for(const [key, value] of Object.entries(imported.savedTexts)){
+              localStorage.setItem(stateKey + "::" + key, value);
+            }
+          }
+          saveState();
+          renderAll();
+          bindEditableSavers();
+          alert("Data imported successfully.");
+        }catch(err){
+          alert("Could not import the file. Please choose a valid JSON export.");
+        }finally{
+          event.target.value = "";
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function clearAllData(){
+      if(!confirm("Clear all saved data on this device?")) return;
+      Object.keys(localStorage)
+        .filter(k => k.startsWith(stateKey))
+        .forEach(k => localStorage.removeItem(k));
+      state = structuredClone(defaults);
+      renderAll();
+      bindEditableSavers();
+      saveState();
+      alert("Local data cleared.");
+    }
+
+    // init
+    renderAll();
+    bindEditableSavers();
+    bindNav();
+    observeSections();
+    setInterval(renderHeader, 1000);
+  </script>
+</body>
+</html>
