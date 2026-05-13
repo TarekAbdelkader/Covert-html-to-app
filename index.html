@@ -799,7 +799,7 @@
     let state = loadState();
 
     // Paste your Supabase values here
-    const SUPABASE_URL = "https://iokpabwjvelvwxsvzgjs.supabase.co/rest/v1/";
+    const SUPABASE_URL = "https://iokpabwjvelvwxsvzgjs.supabase.co";
     const SUPABASE_KEY = "sb_publishable_46eEXIDG_kzS4wsGeDpR0A_rYx_7bPG";
     const CLOUD_TABLE = "dashboard_state";
 
@@ -1389,7 +1389,7 @@
       }
     }
 
-    async window.signUpWithEmail = async function signUpWithEmail(){
+    window.signUpWithEmail = async function signUpWithEmail(){
       const email = document.getElementById("syncEmail")?.value.trim();
       const password = document.getElementById("syncPassword")?.value.trim();
       if (!email || !password){
@@ -1411,7 +1411,7 @@
       }
     }
 
-    async window.signInWithEmail = async function signInWithEmail(){
+    window.signInWithEmail = async function signInWithEmail(){
       const email = document.getElementById("syncEmail")?.value.trim();
       const password = document.getElementById("syncPassword")?.value.trim();
       if (!email || !password){
@@ -1431,7 +1431,7 @@
       startCloudPolling();
     }
 
-    async window.signOutUser = async function signOutUser(){
+    window.signOutUser = async function signOutUser(){
       await supabaseClient.auth.signOut();
       currentUser = null;
       cloudReady = false;
@@ -1439,7 +1439,7 @@
       updateSyncStatus("Logged out");
     }
 
-    async window.initCloudSync = async function initCloudSync(){
+    window.initCloudSync = async function initCloudSync(){
       if (!window.supabase || SUPABASE_URL.includes("PASTE_YOUR") || SUPABASE_KEY.includes("PASTE_YOUR")) {
         updateSyncStatus("Paste Supabase URL and key first");
         return;
