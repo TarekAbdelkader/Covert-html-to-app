@@ -755,6 +755,8 @@
     </main>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <script>
     const stateKey = "landscape-productivity-dashboard-v2";
     const defaults = {
@@ -796,6 +798,19 @@
 
     let state = loadState();
 
+    // Paste your Supabase values here
+    const SUPABASE_URL = "https://iokpabwjvelvwxsvzgjs.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_46eEXIDG_kzS4wsGeDpR0A_rYx_7bPG";
+    const CLOUD_TABLE = "dashboard_state";
+
+    let currentUser = null;
+    let syncTimer = null;
+    let cloudPollTimer = null;
+    let cloudBusy = false;
+    let cloudReady = false;
+    let realtimeChannel = null;
+    let supabaseClient = null;
+
     function mergeDeep(target, source){
       if(!source) return target;
       for(const key of Object.keys(source)){
@@ -818,6 +833,9 @@
     function saveState(){
       localStorage.setItem(stateKey, JSON.stringify(state));
       updateStats();
+      if (cloudReady && currentUser && !cloudBusy) {
+        scheduleCloudSave();
+      }
     }
     function esc(s){
       return (s ?? "").toString()
@@ -1190,25 +1208,310 @@
       alert("Local data cleared.");
     }
 
+
+    function getLocalTextData(){
+      const savedTexts = {};
+      Object.keys(localStorage)
+        .filter(k => k.startsWith(stateKey + "::"))
+        .forEach(k => savedTexts[k] = localStorage.getItem(k));
+      return savedTexts;
+    }
+
+    function applyLocalTextData(savedTexts){
+      Object.keys(localStorage)
+        .filter(k => k.startsWith(stateKey + "::"))
+        .forEach(k => localStorage.removeItem(k));
+      if (savedTexts && typeof savedTexts === "object"){
+        Object.entries(savedTexts).forEach(([k, v]) => {
+          if (k.startsWith(stateKey + "::")) {
+            localStorage.setItem(k, v ?? "");
+          }
+        });
+      }
+    }
+
+    function getCloudPayload(){
+      return {
+        version: 1,
+        state,
+        savedTexts: getLocalTextData(),
+        updatedAt: new Date().toISOString()
+      };
+    }
+
+    function applyCloudPayload(payload){
+      if (!payload || typeof payload !== "object") return;
+      cloudBusy = true;
+      try{
+        if (payload.state){
+          state = mergeDeep(structuredClone(defaults), payload.state);
+        }
+        if (payload.savedTexts){
+          applyLocalTextData(payload.savedTexts);
+        }
+        renderAll();
+        bindEditableSavers();
+        updateStats();
+      } finally {
+        cloudBusy = false;
+      }
+    }
+
+    function getSyncStatusText(extra){
+      if (!currentUser) return "Not logged in";
+      if (extra) return extra;
+      return "Connected as " + currentUser.email;
+    }
+
+    function updateSyncStatus(extra){
+      const el = document.getElementById("syncStatus");
+      if (el) el.textContent = getSyncStatusText(extra);
+      const badge = document.getElementById("syncBadge");
+      if (badge) badge.textContent = currentUser ? "Synced" : "Local only";
+      const userEl = document.getElementById("syncUser");
+      if (userEl) userEl.textContent = currentUser ? currentUser.email : "No user";
+    }
+
+    window.mountSyncPanel = function mountSyncPanel(){
+      const grid = document.querySelector(".landscape-grid");
+      const dashboard = document.getElementById("dashboard");
+      if (!grid || document.getElementById("syncPanel")) return;
+
+      const section = document.createElement("section");
+      section.className = "section span-12";
+      section.id = "syncPanel";
+      section.innerHTML = `
+        <header>
+          <h3>Cloud Sync</h3>
+          <span id="syncBadge">Local only</span>
+        </header>
+        <div class="body grid-2">
+          <div class="card">
+            <h4>Login</h4>
+            <div class="grid-2" style="margin-bottom:10px">
+              <div>
+                <div class="muted tiny" style="margin-bottom:6px">Email</div>
+                <input id="syncEmail" type="email" placeholder="you@example.com">
+              </div>
+              <div>
+                <div class="muted tiny" style="margin-bottom:6px">Password</div>
+                <input id="syncPassword" type="password" placeholder="Password">
+              </div>
+            </div>
+            <div class="row">
+              <button class="btn btn-gold" onclick="signUpWithEmail()">Create account</button>
+              <button class="btn btn-dark" onclick="signInWithEmail()">Login</button>
+              <button class="btn btn-rose" onclick="signOutUser()">Logout</button>
+            </div>
+            <p class="footer-note" style="margin-top:12px">
+              Use the same email and password on the laptop and the phone. That is what keeps the data in sync.
+            </p>
+          </div>
+          <div class="card">
+            <h4>Status</h4>
+            <div class="metric-box" style="margin-bottom:12px">
+              <div class="muted tiny">Signed in as</div>
+              <div class="num" id="syncUser" style="font-size:18px; word-break:break-word; color:var(--text);">No user</div>
+            </div>
+            <div class="metric-box" style="margin-bottom:12px">
+              <div class="muted tiny">Sync status</div>
+              <div class="num" id="syncStatus" style="font-size:18px; word-break:break-word; color:var(--text);">Not logged in</div>
+            </div>
+            <div class="metric-box">
+              <div class="muted tiny">What happens</div>
+              <div class="muted tiny" style="line-height:1.6">
+                Your edits are saved locally first, then pushed to Supabase. The other device checks for updates every few seconds.
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      if (dashboard && dashboard.parentNode === grid){
+        grid.insertBefore(section, dashboard);
+      } else {
+        grid.prepend(section);
+      }
+    }
+
+    async function ensureCloudRow(){
+      if (!currentUser) return;
+      const payload = getCloudPayload();
+      const { error } = await supabaseClient
+        .from(CLOUD_TABLE)
+        .upsert({ user_id: currentUser.id, payload, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+      if (error) throw error;
+    }
+
+    async function loadCloudState(){
+      if (!currentUser) return;
+      const { data, error } = await supabaseClient
+        .from(CLOUD_TABLE)
+        .select('payload, updated_at')
+        .eq('user_id', currentUser.id)
+        .maybeSingle();
+      if (error) throw error;
+      if (data && data.payload) {
+        applyCloudPayload(data.payload);
+      }
+    }
+
+    function scheduleCloudSave(){
+      if (!currentUser || cloudBusy) return;
+      clearTimeout(syncTimer);
+      syncTimer = setTimeout(async () => {
+        try{
+          await ensureCloudRow();
+          updateSyncStatus("Saved to cloud");
+        } catch (err){
+          console.error(err);
+          updateSyncStatus("Cloud save failed");
+        }
+      }, 650);
+    }
+
+    function startCloudPolling(){
+      stopCloudPolling();
+      cloudPollTimer = setInterval(async () => {
+        if (!currentUser || cloudBusy) return;
+        try{
+          await loadCloudState();
+        } catch (err){
+          console.error(err);
+          updateSyncStatus("Cloud check failed");
+        }
+      }, 5000);
+    }
+
+    function stopCloudPolling(){
+      if (cloudPollTimer){
+        clearInterval(cloudPollTimer);
+        cloudPollTimer = null;
+      }
+    }
+
+    async window.signUpWithEmail = async function signUpWithEmail(){
+      const email = document.getElementById("syncEmail")?.value.trim();
+      const password = document.getElementById("syncPassword")?.value.trim();
+      if (!email || !password){
+        alert("Write email and password first.");
+        return;
+      }
+      const { data, error } = await supabaseClient.auth.signUp({ email, password });
+      if (error){
+        alert(error.message);
+        return;
+      }
+      if (data.user){
+        currentUser = data.user;
+        cloudReady = true;
+        updateSyncStatus("Account created");
+        await ensureCloudRow();
+        await loadCloudState();
+        startCloudPolling();
+      }
+    }
+
+    async window.signInWithEmail = async function signInWithEmail(){
+      const email = document.getElementById("syncEmail")?.value.trim();
+      const password = document.getElementById("syncPassword")?.value.trim();
+      if (!email || !password){
+        alert("Write email and password first.");
+        return;
+      }
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error){
+        alert(error.message);
+        return;
+      }
+      currentUser = data.user;
+      cloudReady = true;
+      updateSyncStatus("Logged in");
+      await ensureCloudRow();
+      await loadCloudState();
+      startCloudPolling();
+    }
+
+    async window.signOutUser = async function signOutUser(){
+      await supabaseClient.auth.signOut();
+      currentUser = null;
+      cloudReady = false;
+      stopCloudPolling();
+      updateSyncStatus("Logged out");
+    }
+
+    async window.initCloudSync = async function initCloudSync(){
+      if (!window.supabase || SUPABASE_URL.includes("PASTE_YOUR") || SUPABASE_KEY.includes("PASTE_YOUR")) {
+        updateSyncStatus("Paste Supabase URL and key first");
+        return;
+      }
+
+      supabaseClient = window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      cloudReady = true;
+      updateSyncStatus("Connecting...");
+
+      const { data } = await supabaseClient.auth.getSession();
+      currentUser = data?.session?.user || null;
+      if (currentUser){
+        updateSyncStatus("Session restored");
+        try{
+          await loadCloudState();
+        }catch(err){
+          console.error(err);
+        }
+        startCloudPolling();
+      } else {
+        updateSyncStatus("Local only until login");
+      }
+
+      supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+        currentUser = session?.user || null;
+        if (currentUser){
+          updateSyncStatus("Logged in");
+          try{
+            await ensureCloudRow();
+            await loadCloudState();
+          } catch (err){
+            console.error(err);
+            updateSyncStatus("Login sync failed");
+          }
+          startCloudPolling();
+        } else {
+          stopCloudPolling();
+          updateSyncStatus("Logged out");
+        }
+      });
+
+      // Optional realtime channel. If it fails, polling still works.
+      try{
+        if (realtimeChannel) {
+          await supabaseClient.removeChannel(realtimeChannel);
+        }
+        realtimeChannel = supabaseClient
+          .channel("dashboard_state_changes")
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: CLOUD_TABLE },
+            async (payload) => {
+              if (!currentUser || cloudBusy) return;
+              if (payload.new && payload.new.user_id === currentUser.id) {
+                try { await loadCloudState(); } catch (err) { console.error(err); }
+              }
+            }
+          )
+          .subscribe();
+      } catch (err){
+        console.error(err);
+      }
+    }
+
     // init
+    mountSyncPanel();
     renderAll();
     bindEditableSavers();
     bindNav();
     observeSections();
+    initCloudSync();
     setInterval(renderHeader, 1000);
   </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<script>
-const SUPABASE_URL = "PUT_YOUR_PROJECT_URL_HERE";
-const SUPABASE_KEY = "PUT_YOUR_PUBLISHABLE_KEY_HERE";
-
-const supabaseClient = supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-);
-
-console.log("Supabase Connected");
-</script>
 </body>
 </html>
