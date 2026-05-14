@@ -6,6 +6,813 @@
   <title>Landscape Productivity Dashboard</title>
   <style>
     :root{
+      --bg:#0b1020;
+      --panel:#121a2f;
+      --panel2:#18213a;
+      --line:#2a3557;
+      --text:#edf3ff;
+      --muted:#93a0c4;
+      --accent:#f7c35f;
+      --accent2:#6ad0c4;
+      --danger:#ff7b8e;
+      --good:#7ddc93;
+      --shadow: 0 16px 40px rgba(0,0,0,.28);
+      --radius: 22px;
+      --radius2: 16px;
+      color-scheme: dark;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(106,208,196,.12), transparent 22%),
+        radial-gradient(circle at top right, rgba(247,195,95,.11), transparent 24%),
+        linear-gradient(180deg, #08101f 0%, #0b1224 100%);
+      color:var(--text);
+      min-height:100vh;
+    }
+    a{color:inherit}
+    .shell{display:grid;grid-template-columns:290px minmax(0,1fr);min-height:100vh}
+    .sidebar{
+      position:sticky; top:0; height:100vh; padding:22px;
+      border-right:1px solid rgba(255,255,255,.08);
+      background: linear-gradient(180deg, rgba(8,14,27,.95), rgba(10,18,35,.88));
+      backdrop-filter: blur(12px); overflow:auto;
+    }
+    .brand{
+      padding:18px; background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.08); border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:18px;
+    }
+    .brand h1{margin:0;font-size:30px;line-height:1.03;letter-spacing:-.03em}
+    .brand p{margin:12px 0 0;color:var(--muted);line-height:1.5;font-size:14px}
+    .today-pill{
+      margin-top:14px; display:inline-flex; align-items:center; gap:8px; padding:10px 14px;
+      border-radius:999px; border:1px solid rgba(247,195,95,.38); background: rgba(247,195,95,.12);
+      color:#ffe3a3; font-weight:600; font-size:13px;
+    }
+    .nav-title{margin:22px 0 12px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+    .nav{display:grid;gap:10px}
+    .nav button{
+      width:100%; text-align:left; border:1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03);
+      color:var(--text); padding:14px 16px; border-radius:16px; cursor:pointer; transition:.2s ease;
+      display:flex; align-items:center; justify-content:space-between; gap:12px; font-weight:600;
+    }
+    .nav button:hover,.nav button.active{transform:translateY(-1px);background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.14)}
+    .tag{font-size:12px;color:var(--muted);font-weight:600}
+    .sidebar .mini{
+      margin-top:18px; padding:16px; border-radius:var(--radius); background: rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08); color:var(--muted); line-height:1.6; font-size:13px;
+    }
+    .content{padding:24px;overflow:hidden}
+    .topbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:18px}
+    .titleblock h2{
+      margin:0;font-size:36px;letter-spacing:-.04em;line-height:1.05
+    }
+    .titleblock p{margin:8px 0 0;color:var(--muted);max-width:860px;line-height:1.55}
+    .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+    .btn{
+      border:1px solid rgba(255,255,255,.10); background:rgba(255,255,255,.04); color:var(--text);
+      padding:12px 14px; border-radius:14px; cursor:pointer; transition:.2s ease; font-weight:700;
+    }
+    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.08)}
+    .btn.primary{background:rgba(247,195,95,.14);border-color:rgba(247,195,95,.34);color:#ffe3a3}
+    .btn.good{background:rgba(122,220,147,.12);border-color:rgba(122,220,147,.30);color:#d7f7df}
+    .btn.danger{background:rgba(255,123,142,.12);border-color:rgba(255,123,142,.32);color:#ffd1d8}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.025));
+      border:1px solid rgba(255,255,255,.09); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden;
+    }
+    .card .inner{padding:18px}
+    .hero,.full{grid-column:span 12}
+    .section{grid-column:span 6;min-height:300px}
+    .panelhead,.section header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+    .section h3,.panelhead h3{margin:0;font-size:22px;letter-spacing:-.03em}
+    .section .sub,.panelhead .sub{color:var(--muted);font-size:13px;margin-top:6px;line-height:1.5}
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;border-radius:999px;border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.04);padding:8px 12px;color:var(--muted);font-size:12px;font-weight:700;white-space:nowrap
+    }
+    .stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .stat{padding:16px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+    .stat .k{color:var(--muted);font-size:12px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px}
+    .stat .v{font-size:28px;line-height:1;font-weight:800;letter-spacing:-.04em}
+    .stat .s{color:var(--muted);font-size:12px;margin-top:8px}
+    .editable{outline:none;border-bottom:1px dashed transparent}
+    .editable:focus{border-bottom-color:rgba(247,195,95,.75);background:rgba(247,195,95,.06);border-radius:8px}
+    .three{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+    .list{display:grid;gap:12px}
+    .task{
+      display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:start;padding:14px 14px;
+      border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)
+    }
+    .task input[type="checkbox"]{margin-top:4px;width:18px;height:18px}
+    .task .main{min-width:0}
+    .task .main .row{display:grid;grid-template-columns:1fr 130px;gap:10px}
+    .task small{color:var(--muted);display:block;margin-top:6px}
+    .tinybtn{
+      border:none;background:rgba(255,123,142,.16);color:#ffd1d8;padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:700
+    }
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .toolbar .grow{flex:1 1 220px}
+    textarea, select, input[type="text"], input[type="email"], input[type="password"], input[type="datetime-local"]{
+      width:100%; background:rgba(12,18,34,.82); color:var(--text); border:1px solid rgba(255,255,255,.10);
+      border-radius:12px; padding:11px 12px; outline:none; font:inherit
+    }
+    textarea{resize:vertical;min-height:120px}
+    .heading{font-size:18px;font-weight:800;margin-bottom:10px;letter-spacing:-.02em}
+    .days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px}
+    .day{
+      padding:12px 10px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);text-align:center
+    }
+    .day .d{font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.10em}
+    .day .n{font-size:26px;font-weight:900;line-height:1}
+    .day.today{background:rgba(247,195,95,.12);border-color:rgba(247,195,95,.30)}
+    .day.today .d,.day.today .n{color:#ffe3a3}
+    .footerbar{
+      margin-top:16px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;color:var(--muted);font-size:13px
+    }
+    .status-dot{
+      display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--good);box-shadow:0 0 0 6px rgba(125,220,147,.12);margin-right:8px
+    }
+    .syncbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .syncbox{
+      padding:14px 16px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+      min-width:220px;color:var(--muted);font-size:13px;line-height:1.5
+    }
+    .syncbox strong{color:var(--text)}
+    .modal{
+      position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55);padding:18px;z-index:100
+    }
+    .modal.show{display:flex}
+    .modal .dialog{
+      width:min(680px, 100%);background:#10182d;border:1px solid rgba(255,255,255,.10);border-radius:24px;padding:18px;box-shadow:var(--shadow)
+    }
+    .dialog h4{margin:0 0 10px;font-size:22px}
+    .dialog p{margin:0 0 14px;color:var(--muted);line-height:1.5}
+    @media (max-width: 1100px){
+      .shell{grid-template-columns:1fr}
+      .sidebar{position:relative;height:auto}
+      .section{grid-column:span 12}
+      .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .three{grid-template-columns:1fr}
+    }
+    @media (max-width: 680px){
+      .content{padding:14px}
+      .titleblock h2{font-size:28px}
+      .stats-grid,.days{grid-template-columns:1fr}
+      .task .main .row{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>Landscape Productivity Dashboard</h1>
+      <p>Stable offline-first build. Smooth navigation, editable sections, auto day reflection, local persistence, export/import backup, and a clean layout that avoids broken sync loops.</p>
+      <div class="today-pill" id="todayPill">Today: --</div>
+    </div>
+
+    <div class="nav-title">Navigation</div>
+    <div class="nav">
+      <button data-target="dashboard" class="active"><span>Dashboard</span><span class="tag">overview</span></button>
+      <button data-target="today"><span>Today</span><span class="tag">focus</span></button>
+      <button data-target="planning"><span>Planning Board</span><span class="tag">many columns</span></button>
+      <button data-target="achieve"><span>Achieve</span><span class="tag">wins</span></button>
+      <button data-target="zeroday"><span>No Zero Day</span><span class="tag">streak</span></button>
+      <button data-target="habits"><span>Habits</span><span class="tag">tracker</span></button>
+      <button data-target="archive"><span>Archive</span><span class="tag">history</span></button>
+      <button data-target="settings"><span>Settings</span><span class="tag">backup</span></button>
+    </div>
+
+    <div class="mini">
+      <strong style="color:var(--text)">How this version behaves</strong><br/>
+      Everything is saved in your browser on the same device and same browser profile. Use Export/Import to move data by hand. This avoids flaky login/sync behavior.
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="topbar" id="dashboard">
+      <div class="titleblock">
+        <h2 class="editable" contenteditable="true" data-save="title">A wide dashboard built for landscape viewing</h2>
+        <p class="editable" contenteditable="true" data-save="subtitle">This version is arranged horizontally with more columns, a cleaner working board, and a navigation system that actually moves to each section.</p>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="exportBtn">Export data</button>
+        <button class="btn good" id="importBtn">Import data</button>
+        <button class="btn" id="copyStateBtn">Copy JSON</button>
+        <button class="btn danger" id="clearBtn">Clear all data</button>
+      </div>
+    </div>
+
+    <section class="grid">
+      <div class="card hero">
+        <div class="inner">
+          <div class="panelhead">
+            <div>
+              <h3>Move data between devices</h3>
+              <div class="sub">Use Export on one device, then Import on the other. This is the stable bridge instead of broken auto-sync.</div>
+            </div>
+            <div class="pill"><span class="status-dot" id="statusDot"></span><span id="statusText">Saved locally</span></div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat">
+              <div class="k">Today</div>
+              <div class="v" id="todayLabel">--</div>
+              <div class="s" id="dateLabel">--</div>
+            </div>
+            <div class="stat">
+              <div class="k">Open section</div>
+              <div class="v" id="openSectionLabel">Dashboard</div>
+              <div class="s">Changes update instantly in this browser</div>
+            </div>
+            <div class="stat">
+              <div class="k">No Zero Day</div>
+              <div class="v" id="streakCount">1</div>
+              <div class="s">Keep the chain alive</div>
+            </div>
+            <div class="stat">
+              <div class="k">Archive items</div>
+              <div class="v" id="archiveCount">0</div>
+              <div class="s">Stored for later review</div>
+            </div>
+          </div>
+
+          <div class="footerbar">
+            <div><span class="status-dot" id="liveDot"></span><span id="liveText">Ready</span></div>
+            <div class="syncbar">
+              <div class="syncbox"><strong>Editing:</strong> click any title or note and type directly.</div>
+              <div class="syncbox"><strong>Backup:</strong> export regularly if you move browsers or devices.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card full" id="today">
+        <div class="inner">
+          <div class="panelhead">
+            <div>
+              <h3>Today</h3>
+              <div class="sub">Auto-reflects the current day and keeps the most important items in front of you.</div>
+            </div>
+            <div class="pill" id="sectionPill">Today section</div>
+          </div>
+
+          <div class="three">
+            <div class="card">
+              <div class="inner">
+                <div class="heading">Today's focus</div>
+                <div id="focusList" class="list"></div>
+                <div class="toolbar" style="margin-top:12px">
+                  <input class="grow" id="newFocusText" type="text" placeholder="Add a focus item..." />
+                  <select id="newFocusPriority">
+                    <option>High</option>
+                    <option selected>Medium</option>
+                    <option>Low</option>
+                  </select>
+                  <button class="btn primary" id="addFocusBtn">Add</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card note">
+              <div class="inner">
+                <div class="heading">Top note</div>
+                <textarea id="topNote" class="note-input" placeholder="Write the most important thing for today..."></textarea>
+                <div class="footerbar" style="margin-top:12px">
+                  <span>Auto-saved locally.</span>
+                  <span id="noteChars">0 chars</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card section" id="planning">
+        <div class="inner">
+          <div class="panelhead">
+            <div>
+              <h3>Planning Board</h3>
+              <div class="sub">A wide view for many columns and future expansion.</div>
+            </div>
+            <div class="pill">board</div>
+          </div>
+          <div id="weekGrid" class="days"></div>
+        </div>
+      </div>
+
+      <div class="card section" id="achieve">
+        <div class="inner">
+          <div class="panelhead">
+            <div>
+              <h3>Achieve</h3>
+              <div class="sub">Wins, progress, and quick notes for the day.</div>
+            </div>
+            <div class="pill">wins</div>
+          </div>
+          <div class="list" id="winsList"></div>
+          <div class="toolbar" style="margin-top:12px">
+            <input class="grow" id="newWinText" type="text" placeholder="Add a win..." />
+            <button class="btn primary" id="addWinBtn">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card section" id="zeroday">
+        <div class="inner">
+          <div class="panelhead">
+            <div>
+              <h3>No Zero Day</h3>
+              <div class="sub">Track the streak and keep momentum alive.</div>
+            </div>
+            <div class="pill">streak</div>
+          </div>
+          <div class="list" id="zeroList"></div>
+          <div class="toolbar" style="margin-top:12px">
+            <input class="grow" id="newZeroText" type="text" placeholder="Add a streak action..." />
+            <button class="btn primary" id="addZeroBtn">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card section" id="habits">
+        <div class="inner">
+          <div class="panelhead">
+            <div>
+              <h3>Habits</h3>
+              <div class="sub">Simple tracker with weekly checkmarks.</div>
+            </div>
+            <div class="pill">tracker</div>
+          </div>
+          <div id="habitList" class="list"></div>
+          <div class="toolbar" style="margin-top:12px">
+            <input class="grow" id="newHabitText" type="text" placeholder="Add a habit..." />
+            <button class="btn primary" id="addHabitBtn">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card section" id="archive">
+        <div class="inner">
+          <div class="panelhead">
+            <div>
+              <h3>Archive</h3>
+              <div class="sub">Keep old items instead of deleting them forever.</div>
+            </div>
+            <div class="pill">history</div>
+          </div>
+          <div id="archiveList" class="list"></div>
+        </div>
+      </div>
+
+      <div class="card full" id="settings">
+        <div class="inner">
+          <div class="panelhead">
+            <div>
+              <h3>Settings & Backup</h3>
+              <div class="sub">This is the safest place to move your data around. No mystery sync.</div>
+            </div>
+            <div class="pill">backup</div>
+          </div>
+
+          <div class="grid" style="grid-template-columns:repeat(12,minmax(0,1fr));">
+            <div class="card" style="grid-column:span 6;">
+              <div class="inner">
+                <div class="heading">Quick backup</div>
+                <div class="sub" style="margin-bottom:12px">Export the whole dashboard as a JSON file or paste it into another browser/device.</div>
+                <div class="toolbar">
+                  <button class="btn primary" id="exportBtn2">Export data</button>
+                  <button class="btn good" id="importBtn2">Import data</button>
+                  <button class="btn" id="copyStateBtn2">Copy JSON</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="grid-column:span 6;">
+              <div class="inner">
+                <div class="heading">Clean reset</div>
+                <div class="sub" style="margin-bottom:12px">Clear only the local browser copy. This does not touch any file on GitHub.</div>
+                <div class="toolbar">
+                  <button class="btn danger" id="clearBtn2">Clear all data</button>
+                  <span class="pill" id="lastSavedPill">Last saved: --</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal" id="importModal">
+  <div class="dialog">
+    <h4>Import dashboard data</h4>
+    <p>Paste the exported JSON below. This replaces the current browser data on this device only.</p>
+    <textarea id="importText" style="width:100%;min-height:220px;background:#0c1324;color:var(--text);border:1px solid rgba(255,255,255,.10);border-radius:16px;padding:12px"></textarea>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
+      <button class="btn" id="cancelImport">Cancel</button>
+      <button class="btn good" id="doImport">Import</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept="application/json" hidden />
+
+<script>
+(() => {
+  const STORAGE_KEY = 'landscape_dashboard_clean_v1';
+  const weekday = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const today = new Date();
+  const dayName = weekday[today.getDay()];
+  const dateString = today.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  const defaultState = {
+    title: 'A wide dashboard built for landscape viewing',
+    subtitle: 'This version is arranged horizontally with more columns, a cleaner working board, and a navigation system that actually moves to each section.',
+    topNote: '',
+    streak: 1,
+    focus: [
+      { text: 'Start with the hardest task', priority: 'High', done: false },
+      { text: 'Make one meaningful step', priority: 'Medium', done: false },
+      { text: 'Protect the day from zero', priority: 'Low', done: false }
+    ],
+    wins: [{ text: 'Created a better landscape layout' }],
+    zero: [{ text: 'No zero day action' }],
+    habits: [
+      { name: 'Workout', cat: 'health', days: [0,0,0,0,0,0,0] },
+      { name: 'Deep work', cat: 'work', days: [0,0,0,0,0,0,0] },
+      { name: 'Reading', cat: 'mind', days: [0,0,0,0,0,0,0] }
+    ],
+    archive: [{ title: 'Sample archive', note: 'Stored item for later review.' }],
+    week: Array.from({length:7}, () => ({ note: '' })),
+    timeline: [
+      { time: '06:00', text: 'Morning routine' },
+      { time: '09:00', text: 'Deep work' },
+      { time: '13:00', text: 'Meetings / admin' },
+      { time: '18:00', text: 'Wrap up' }
+    ],
+    savedAt: null
+  };
+
+  const clone = (v) => JSON.parse(JSON.stringify(v));
+  const state = loadState();
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return clone(defaultState);
+      const parsed = JSON.parse(raw);
+      return mergeDeep(clone(defaultState), parsed || {});
+    } catch {
+      return clone(defaultState);
+    }
+  }
+
+  function saveState() {
+    state.savedAt = new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    updateMeta();
+  }
+
+  function mergeDeep(target, source) {
+    if (!source || typeof source !== 'object') return target;
+    for (const key of Object.keys(source)) {
+      if (Array.isArray(source[key])) target[key] = clone(source[key]);
+      else if (source[key] && typeof source[key] === 'object') target[key] = mergeDeep(target[key] || {}, source[key]);
+      else target[key] = source[key];
+    }
+    return target;
+  }
+
+  function setStatus(kind, text) {
+    const map = { good:['var(--good)', 'Saved locally'], warn:['var(--accent)', text || 'Working'], bad:['var(--danger)', text || 'Issue'] };
+    const [color] = map[kind] || map.good;
+    $('#statusDot').style.background = color;
+    $('#liveDot').style.background = color;
+    $('#statusText').textContent = text || (kind === 'good' ? 'Saved locally' : kind);
+    $('#liveText').textContent = text || (kind === 'good' ? 'Ready' : kind);
+  }
+
+  function updateMeta(){
+    $('#todayPill').textContent = `Today: ${dayName}, ${today.toLocaleDateString()}`;
+    $('#todayLabel').textContent = dayName;
+    $('#dateLabel').textContent = dateString;
+    $('#streakCount').textContent = state.streak || 0;
+    $('#archiveCount').textContent = state.archive?.length || 0;
+    $('#noteChars').textContent = `${(state.topNote || '').length} chars`;
+    $('#lastSavedPill').textContent = `Last saved: ${state.savedAt ? new Date(state.savedAt).toLocaleTimeString() : '--'}`;
+  }
+
+  function renderWeek(){
+    const grid = $('#weekGrid');
+    const short = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    grid.innerHTML = short.map((d, i) => `
+      <div class="day ${i === today.getDay() ? 'today' : ''}">
+        <div class="d">${d}</div>
+        <div class="n">${i === today.getDay() ? 'Today' : i+1}</div>
+      </div>
+    `).join('');
+  }
+
+  function renderFocus(){
+    const wrap = $('#focusList');
+    wrap.innerHTML = '';
+    state.focus.forEach((item, idx) => {
+      const row = document.createElement('div');
+      row.className = 'task';
+      row.innerHTML = `
+        <input type="checkbox" ${item.done ? 'checked' : ''} aria-label="done">
+        <div class="main">
+          <div class="row">
+            <input type="text" value="${escapeHtml(item.text)}" />
+            <select>
+              ${['High','Medium','Low'].map(p => `<option ${item.priority===p?'selected':''}>${p}</option>`).join('')}
+            </select>
+          </div>
+          <small>Priority: ${item.priority.toLowerCase()}</small>
+        </div>
+        <button class="tinybtn">Delete</button>
+      `;
+      const [check, input, select] = [row.querySelector('input[type="checkbox"]'), row.querySelector('input[type="text"]'), row.querySelector('select')];
+      check.addEventListener('change', () => { item.done = check.checked; saveState(); renderStats(); });
+      input.addEventListener('input', () => { item.text = input.value; saveState(); });
+      select.addEventListener('change', () => { item.priority = select.value; saveState(); row.querySelector('small').textContent = `Priority: ${item.priority.toLowerCase()}`; });
+      row.querySelector('.tinybtn').addEventListener('click', () => { state.focus.splice(idx,1); saveState(); renderAll(); });
+      wrap.appendChild(row);
+    });
+  }
+
+  function renderWins(){
+    const wrap = $('#winsList');
+    wrap.innerHTML = '';
+    state.wins.forEach((item, idx) => {
+      const row = document.createElement('div');
+      row.className = 'task';
+      row.innerHTML = `
+        <div></div>
+        <div class="main">
+          <input type="text" value="${escapeHtml(item.text)}" />
+          <small>Today win</small>
+        </div>
+        <button class="tinybtn">Delete</button>
+      `;
+      const input = row.querySelector('input[type="text"]');
+      input.addEventListener('input', () => { item.text = input.value; saveState(); });
+      row.querySelector('.tinybtn').addEventListener('click', () => { state.wins.splice(idx,1); saveState(); renderAll(); });
+      wrap.appendChild(row);
+    });
+  }
+
+  function renderZero(){
+    const wrap = $('#zeroList');
+    wrap.innerHTML = '';
+    state.zero.forEach((item, idx) => {
+      const row = document.createElement('div');
+      row.className = 'task';
+      row.innerHTML = `
+        <div></div>
+        <div class="main">
+          <input type="text" value="${escapeHtml(item.text)}" />
+          <small>Keep momentum</small>
+        </div>
+        <button class="tinybtn">Delete</button>
+      `;
+      const input = row.querySelector('input[type="text"]');
+      input.addEventListener('input', () => { item.text = input.value; saveState(); });
+      row.querySelector('.tinybtn').addEventListener('click', () => { state.zero.splice(idx,1); saveState(); renderAll(); });
+      wrap.appendChild(row);
+    });
+  }
+
+  function renderHabits(){
+    const wrap = $('#habitList');
+    const weekShort = ['S','M','T','W','T','F','S'];
+    wrap.innerHTML = '';
+    state.habits.forEach((item, idx) => {
+      const row = document.createElement('div');
+      row.className = 'card';
+      row.style.padding = '14px';
+      row.innerHTML = `
+        <div class="panelhead" style="margin-bottom:10px">
+          <div style="min-width:0;flex:1">
+            <input type="text" value="${escapeHtml(item.name)}" style="font-weight:800;font-size:16px" />
+            <div class="sub">Category: ${escapeHtml(item.cat)}</div>
+          </div>
+          <button class="tinybtn">Delete</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px">
+          ${weekShort.map(d => `<button class="btn" style="padding:10px 0;border-radius:12px">${d}</button>`).join('')}
+        </div>
+      `;
+      const name = row.querySelector('input[type="text"]');
+      name.addEventListener('input', () => { item.name = name.value; saveState(); });
+      const buttons = $$('.btn', row);
+      buttons.forEach((btn, i) => {
+        btn.addEventListener('click', () => {
+          item.days[i] = item.days[i] ? 0 : 1;
+          btn.classList.toggle('good', !!item.days[i]);
+          saveState();
+        });
+      });
+      row.querySelector('.tinybtn').addEventListener('click', () => { state.habits.splice(idx,1); saveState(); renderAll(); });
+      wrap.appendChild(row);
+    });
+  }
+
+  function renderArchive(){
+    const wrap = $('#archiveList');
+    wrap.innerHTML = '';
+    state.archive.forEach((item, idx) => {
+      const row = document.createElement('div');
+      row.className = 'task';
+      row.innerHTML = `
+        <div></div>
+        <div class="main">
+          <input type="text" value="${escapeHtml(item.title)}" />
+          <small>${escapeHtml(item.note || '')}</small>
+        </div>
+        <button class="tinybtn">Delete</button>
+      `;
+      const input = row.querySelector('input[type="text"]');
+      input.addEventListener('input', () => { item.title = input.value; saveState(); });
+      row.querySelector('.tinybtn').addEventListener('click', () => { state.archive.splice(idx,1); saveState(); renderAll(); });
+      wrap.appendChild(row);
+    });
+  }
+
+  function renderStats(){
+    $('#archiveCount').textContent = state.archive?.length || 0;
+    $('#streakCount').textContent = state.streak || 0;
+    $('#noteChars').textContent = `${(state.topNote || '').length} chars`;
+    $('#openSectionLabel').textContent = document.querySelector('.nav button.active')?.querySelector('.tag')?.textContent || 'Dashboard';
+  }
+
+  function renderTop(){
+    document.querySelector('[data-save="title"]').textContent = state.title || defaultState.title;
+    document.querySelector('[data-save="subtitle"]').textContent = state.subtitle || defaultState.subtitle;
+    $('#topNote').value = state.topNote || '';
+  }
+
+  function renderAll(){
+    renderTop();
+    renderWeek();
+    renderFocus();
+    renderWins();
+    renderZero();
+    renderHabits();
+    renderArchive();
+    renderStats();
+    updateMeta();
+    setStatus('good', 'Saved locally');
+  }
+
+  function escapeHtml(s){
+    return String(s ?? '')
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'",'&#39;');
+  }
+
+  function addItem(listName, value){
+    if(!value) return;
+    state[listName].push(value);
+    saveState();
+    renderAll();
+  }
+
+  $$('#dashboard [contenteditable="true"]').forEach(el => {
+    el.addEventListener('input', () => {
+      const key = el.getAttribute('data-save');
+      state[key] = el.innerText.trim();
+      saveState();
+    });
+  });
+
+  $('#topNote').addEventListener('input', () => {
+    state.topNote = $('#topNote').value;
+    saveState();
+    updateMeta();
+  });
+
+  $('#addFocusBtn').addEventListener('click', () => {
+    addItem('focus', { text: $('#newFocusText').value.trim(), priority: $('#newFocusPriority').value, done:false });
+    $('#newFocusText').value = '';
+    $('#newFocusPriority').value = 'Medium';
+  });
+  $('#addWinBtn').addEventListener('click', () => { addItem('wins', { text: $('#newWinText').value.trim() }); $('#newWinText').value = ''; });
+  $('#addZeroBtn').addEventListener('click', () => { addItem('zero', { text: $('#newZeroText').value.trim() }); $('#newZeroText').value = ''; });
+  $('#addHabitBtn').addEventListener('click', () => { addItem('habits', { name: $('#newHabitText').value.trim(), cat: 'custom', days:[0,0,0,0,0,0,0] }); $('#newHabitText').value = ''; });
+
+  $$('.nav button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('.nav button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const target = document.getElementById(btn.dataset.target);
+      if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
+      $('#openSectionLabel').textContent = btn.querySelector('.tag')?.textContent || btn.textContent.trim();
+    });
+  });
+
+  function exportData(){
+    const payload = JSON.stringify(state, null, 2);
+    const blob = new Blob([payload], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'landscape-productivity-dashboard.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setStatus('good', 'Export downloaded');
+  }
+
+  function copyJSON(){
+    const payload = JSON.stringify(state, null, 2);
+    navigator.clipboard.writeText(payload).then(() => setStatus('good', 'JSON copied')).catch(() => setStatus('warn', 'Copy blocked'));
+  }
+
+  function clearAll(){
+    if(!confirm('Clear all local dashboard data on this browser?')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    Object.assign(state, clone(defaultState));
+    saveState();
+    renderAll();
+    setStatus('warn', 'Local data cleared');
+    alert('Local data cleared.');
+  }
+
+  $('#exportBtn').addEventListener('click', exportData);
+  $('#exportBtn2').addEventListener('click', exportData);
+  $('#copyStateBtn').addEventListener('click', copyJSON);
+  $('#copyStateBtn2').addEventListener('click', copyJSON);
+  $('#clearBtn').addEventListener('click', clearAll);
+  $('#clearBtn2').addEventListener('click', clearAll);
+
+  $('#importBtn').addEventListener('click', () => $('#fileInput').click());
+  $('#importBtn2').addEventListener('click', () => $('#fileInput').click());
+
+  $('#fileInput').addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if(!file) return;
+    const text = await file.text();
+    $('#importText').value = text;
+    $('#importModal').classList.add('show');
+    e.target.value = '';
+  });
+
+  $('#cancelImport').addEventListener('click', () => $('#importModal').classList.remove('show'));
+  $('#doImport').addEventListener('click', () => {
+    try{
+      const imported = JSON.parse($('#importText').value);
+      const next = mergeDeep(clone(defaultState), imported);
+      Object.keys(state).forEach(k => delete state[k]);
+      Object.assign(state, next);
+      saveState();
+      renderAll();
+      $('#importModal').classList.remove('show');
+      setStatus('good', 'Imported successfully');
+      alert('Imported successfully.');
+    }catch(err){
+      alert('Invalid JSON.');
+    }
+  });
+
+  $('#importModal').addEventListener('click', (e) => {
+    if(e.target === $('#importModal')) $('#importModal').classList.remove('show');
+  });
+
+  window.addEventListener('storage', (e) => {
+    if(e.key === STORAGE_KEY){
+      const fresh = loadState();
+      Object.keys(state).forEach(k => delete state[k]);
+      Object.assign(state, fresh);
+      renderAll();
+      setStatus('warn', 'Updated from another tab');
+    }
+  });
+
+  renderAll();
+  saveState();
+})();
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Landscape Productivity Dashboard</title>
+  <style>
+    :root{
       --bg:#0a1020;
       --panel:#141b31;
       --panel2:#1a2340;
